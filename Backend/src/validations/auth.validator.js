@@ -63,3 +63,28 @@ export const resendEmailValidator = [
     .normalizeEmail(),
   validater
 ]
+
+
+export const loginValidation = [
+  body("email")
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please enter a valid email")
+    .normalizeEmail(),
+
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+    .isLength({ max: 16 })
+    .withMessage("Password must not exceed 16 characters")
+    .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
+    .withMessage(
+      "Password must contain uppercase, lowercase, number, and special character"
+    )
+    .trim(),
+
+  validater
+]

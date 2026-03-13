@@ -18,7 +18,7 @@ export function verificationEmailTemplate({ name, verificationLink }) {
             <!-- Header -->
             <tr>
               <td style="background:#0f172a;color:#ffffff;padding:24px;text-align:center;font-size:20px;font-weight:600;">
-                Perplexity AI
+                Clarity AI
               </td>
             </tr>
 
@@ -29,7 +29,7 @@ export function verificationEmailTemplate({ name, verificationLink }) {
                 <p style="margin-top:0;">Hi ${name},</p>
 
                 <p>
-                  Thank you for signing up for <strong>Perplexity</strong>.  
+                  Thank you for signing up for <strong>Clarity</strong>.  
                   Please confirm your email address to activate your account.
                 </p>
 
@@ -66,7 +66,7 @@ export function verificationEmailTemplate({ name, verificationLink }) {
 
                 <p style="margin-bottom:0;">
                   Best regards,<br/>
-                  <strong>Perplexity Team</strong>
+                  <strong>Clarity AI Team</strong>
                 </p>
 
               </td>

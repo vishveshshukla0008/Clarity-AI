@@ -56,7 +56,7 @@ export function emailVerifiedTemplate(name) {
                 </p>
 
                 <p style="margin-top:30px; font-size:14px; color:#999;">
-                  © ${new Date().getFullYear()} Perplexity AI. All rights reserved.
+                  © ${new Date().getFullYear()} Clarity AI. All rights reserved.
                 </p>
 
               </td>

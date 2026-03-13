@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
 import { userModel } from "../models/user.model.js";
 import AppError from "../utils/AppError.js";
@@ -66,7 +67,7 @@ const verificationUserEmailController = asyncWrapper(async (req, res) => {
   await user.save();
 
   sendVerificationConfirmationEmail(user);
-  
+
   return res
     .status(200)
     .json({ success: true, message: "Email verified successfully !" });
@@ -97,8 +98,64 @@ const resendVerificationEmailController = asyncWrapper(async (req, res) => {
     .json({ success: true, message: "Verification email sent" });
 });
 
+/***
+ * @route POST /api/auth/login
+ * @description Login a user on server after checking credentials and email verification !
+ * @access  Public
+ */
+
+const loginUserController = asyncWrapper(async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await userModel.findOne({ email }).select("+password +isVerified");
+
+  if (!user || !(await user.comparePassword(password))) {
+    throw new AppError(401, "Invalid email or password");
+  }
+
+  if (!user.isVerified) {
+    throw new AppError(400, "Please verify your email first");
+  }
+
+  const token = jwt.sign(
+    { id: user._id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Logged in successfully",
+  });
+});
+
+
+/***
+ * @route GET /api/auth/get-me
+ * @description Return a user after passing the identifyUser Middleware !
+ * @access  protected
+ */
+
+
+const getUserController = async (req, res) => {
+  const user = await userModel.findById(req.user.id);
+  if (!user) throw new AppError(404, "User does not exist !");
+
+  return res.status(200).json({ message: "User Fetched Success !", success: true, user });
+}
+
+
 export const authController = {
   registerNewUserController,
   verificationUserEmailController,
   resendVerificationEmailController,
+  loginUserController,
+  getUserController
 };

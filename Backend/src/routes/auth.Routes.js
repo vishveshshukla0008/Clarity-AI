@@ -1,6 +1,8 @@
 import { Router } from "express";
-import { registerValidation, resendEmailValidator } from "../validations/auth.validator.js";
+import { loginValidation, registerValidation, resendEmailValidator } from "../validations/auth.validator.js";
+
 import { authController } from "../controllers/auth.controller.js";
+import { identifyUser } from "../middlewares/auth.middleware.js";
 
 const authRouter = Router();
 
@@ -12,8 +14,9 @@ authRouter.get("/verify-email/:token", authController.verificationUserEmailContr
 
 authRouter.post("/resend-email", resendEmailValidator, authController.resendVerificationEmailController)
 
+authRouter.post("/login", loginValidation, authController.loginUserController);
 
-
+authRouter.get("/get-me", identifyUser, authController.getUserController)
 
 
 export default authRouter;

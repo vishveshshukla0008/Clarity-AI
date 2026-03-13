@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema(
             select: false
         },
         emailVerificationExpires: {
-            type: String,
+            type: Date,
             select: false
         }
     },
@@ -67,7 +67,6 @@ userSchema.pre('save', async function () {
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
+    return await bcrypt.compare(candidatePassword, this.password);
 };
-
 export const userModel = mongoose.model("User", userSchema);
