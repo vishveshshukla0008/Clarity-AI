@@ -56,10 +56,19 @@ const userSchema = new mongoose.Schema(
         emailVerificationExpires: {
             type: Date,
             select: false
-        }
+        },
+        resetPasswordToken: {
+            type: String,
+            select: false,
+        },
+        resetPasswordTokenExpires: {
+            type: Date,
+            select: false
+        },
     },
     { timestamps: true },
 );
+
 
 userSchema.pre('save', async function () {
     if (!this.isModified('password')) return;

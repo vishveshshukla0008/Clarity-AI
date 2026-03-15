@@ -37,7 +37,7 @@ export const registerValidation = [
     .withMessage("Password must not exceed 16 characters")
     .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
     .withMessage(
-      "Password must contain uppercase, lowercase, number, and special character"
+      "Password must contain uppercase, lowercase, number, and special character",
     )
     .trim(),
 
@@ -50,20 +50,18 @@ export const registerValidation = [
     .withMessage("Fullname cannot exceed 20 characters")
     .trim(),
 
-  validater
+  validater,
 ];
 
-
-export const resendEmailValidator = [
+export const emailValidator = [
   body("email")
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
     .withMessage("Please enter a valid email")
     .normalizeEmail(),
-  validater
-]
-
+  validater,
+];
 
 export const loginValidation = [
   body("email")
@@ -82,9 +80,25 @@ export const loginValidation = [
     .withMessage("Password must not exceed 16 characters")
     .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
     .withMessage(
-      "Password must contain uppercase, lowercase, number, and special character"
+      "Password must contain uppercase, lowercase, number, and special character",
     )
     .trim(),
 
-  validater
-]
+  validater,
+];
+
+export const passwordValidator = [
+  body("newPassword")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+    .isLength({ max: 16 })
+    .withMessage("Password must not exceed 16 characters")
+    .matches(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
+    .withMessage(
+      "Password must contain uppercase, lowercase, number, and special character",
+    )
+    .trim(),
+  validater,
+];

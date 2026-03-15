@@ -3,6 +3,8 @@ import { asyncWrapper } from "../utils/asyncWrapper.js";
 import { userModel } from "../models/user.model.js";
 import AppError from "../utils/AppError.js";
 import {
+  sendForgetPasswordLink,
+  sendResetPasswordConfirmationEmail,
   sendVerificationConfirmationEmail,
   sendVerificationEmail,
 } from "../services/auth.service.js";
@@ -25,19 +27,25 @@ const registerNewUserController = asyncWrapper(async (req, res) => {
       "User already exists with the provided email or username",
     );
 
-  const newUser = await userModel.create({
+  let user = await userModel.create({
     fullname,
     username,
     email,
     password,
   });
 
-  sendVerificationEmail(newUser);
+  await sendVerificationEmail(user);
+
+  user = user.toObject();
+  delete user.password;
+  delete user.isVerified;
+  delete user.emailVerificationToken;
+  delete user.emailVerificationExpires;
 
   return res.status(201).json({
     success: true,
     message: "User registered successfully",
-    newUser,
+    user,
   });
 });
 
@@ -55,8 +63,12 @@ const verificationUserEmailController = asyncWrapper(async (req, res) => {
 
   if (!user) throw new AppError(404, "User does not exist");
 
-  if (user.emailVerificationExpires < Date.now())
+  if (user.emailVerificationExpires < Date.now()) {
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
     throw new AppError(400, "Verification link expired");
+  }
 
   if (user.isVerified) throw new AppError(400, "User is already verified !");
 
@@ -107,7 +119,9 @@ const resendVerificationEmailController = asyncWrapper(async (req, res) => {
 const loginUserController = asyncWrapper(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await userModel.findOne({ email }).select("+password +isVerified");
+  let user = await userModel
+    .findOne({ email })
+    .select("+password +isVerified");
 
   if (!user || !(await user.comparePassword(password))) {
     throw new AppError(401, "Invalid email or password");
@@ -120,8 +134,12 @@ const loginUserController = asyncWrapper(async (req, res) => {
   const token = jwt.sign(
     { id: user._id, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "7d" },
   );
+
+  user = user.toObject();
+  delete user.password;
+  delete user.isVerified;
 
   res.cookie("token", token, {
     httpOnly: true,
@@ -133,9 +151,9 @@ const loginUserController = asyncWrapper(async (req, res) => {
   return res.status(200).json({
     success: true,
     message: "Logged in successfully",
+    user
   });
 });
-
 
 /***
  * @route GET /api/auth/get-me
@@ -143,13 +161,68 @@ const loginUserController = asyncWrapper(async (req, res) => {
  * @access  protected
  */
 
-
-const getUserController = async (req, res) => {
+const getUserController = asyncWrapper(async (req, res) => {
   const user = await userModel.findById(req.user.id);
   if (!user) throw new AppError(404, "User does not exist !");
 
-  return res.status(200).json({ message: "User Fetched Success !", success: true, user });
-}
+  return res
+    .status(200)
+    .json({ message: "User Fetched Success !", success: true, user });
+});
+
+/***
+ * @route GET /api/auth/forget-password
+ * @description access the email in body and sending the reset password template on the user email :
+ * @access  Public
+ */
+
+const sendForgetPasswordEmailController = asyncWrapper(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await userModel.findOne({ email }).select("+resetPasswordToken +resetPasswordTokenExpires +isVerified");
+
+  if (!user) throw new AppError(404, "User does not exist !");
+
+  sendForgetPasswordLink(user);
+
+  return res.status(200).json({ success: true, message: "Reset password link has been sent on your email !" });
+});
+
+
+/***
+ * @route POST /api/auth/reset-password/:token
+ * @description Reseting the password after validating the users token and update the password in databases .
+ * @access  protected
+ */
+
+
+const resetAuthPasswordController = asyncWrapper(async (req, res) => {
+  const { token } = req.params;
+
+  const user = await userModel.findOne({ resetPasswordToken: token }).select("+resetPasswordToken +resetPasswordTokenExpires +password");
+
+  if (!user) throw new AppError(404, "Invalid Token !");
+
+  if (user.resetPasswordTokenExpires < Date.now()) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordTokenExpires = undefined;
+    await user.save();
+    throw new AppError(400, "Link expired !")
+  }
+  const { newPassword } = req.body;
+
+  user.password = newPassword;
+
+  user.resetPasswordToken = undefined;
+  user.resetPasswordTokenExpires = undefined;
+
+
+  await user.save();
+
+  await sendResetPasswordConfirmationEmail(user);
+
+  return res.status(200).json({ success: true, message: "Password Reset Successfully !" })
+})
 
 
 export const authController = {
@@ -157,5 +230,7 @@ export const authController = {
   verificationUserEmailController,
   resendVerificationEmailController,
   loginUserController,
-  getUserController
+  getUserController,
+  sendForgetPasswordEmailController,
+  resetAuthPasswordController
 };

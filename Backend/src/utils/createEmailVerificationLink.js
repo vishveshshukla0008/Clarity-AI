@@ -1,3 +1,8 @@
 export function createVerificationLink(token) {
-  return `http://localhost:8080/api/auth/verify-email/${token}`;
+  return `${process.env.FRONTEND_URL}/api/auth/verify-email/${token}`;
+}
+
+
+export function createResetPasswordLink(token) {
+  return `${process.env.FRONTEND_URL}/api/auth/reset-password/${token}`;
 }
